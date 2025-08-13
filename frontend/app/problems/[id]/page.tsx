@@ -1,0 +1,8 @@
+'use client'; import useSWR from "swr"; import { api } from "../../../lib/api"; import dynamic from "next/dynamic"; import { useState } from "react";
+const Monaco = dynamic(()=>import("@monaco-editor/react"),{ ssr:false });
+export default function ProblemPage({ params }: { params: { id: string }}){
+  const {data,error}=useSWR(`/problems/${params.id}`,(p)=>api(p)); const [language,setLang]=useState("py"); const [src,setSrc]=useState("");
+  const submit = async()=>{ try{ const res = await api("/submissions/",{method:"POST", body: JSON.stringify({problem: Number(params.id), language, source: src})}); alert(`Status: ${res.status}\nScore: ${res.score}`);}catch(e:any){ alert(e.message);} };
+  if(error) return <div className="card">Failed to load</div>; if(!data) return <div className="card">Loading…</div>;
+  return (<div className="grid"><div className="card"><h3>{data.title}</h3><pre style={{whiteSpace:"pre-wrap"}}>{data.statement}</pre><h4>Samples</h4>{data.testcases.filter((t:any)=>t.is_sample).map((t:any)=>(<div key={t.id} className="card"><b>Input</b><pre>{t.input_text}</pre><b>Output</b><pre>{t.output_text}</pre></div>))}</div><div className="card" style={{padding:0}}><div style={{padding:12,display:"flex",gap:8}}><select className="input" style={{maxWidth:180}} value={language} onChange={e=>setLang(e.target.value)}><option value="py">Python</option><option value="cpp">C++17</option><option value="js">Node.js</option></select><button className="btn" onClick={submit}>Submit</button></div><Monaco height="520px" defaultLanguage="python" language={language==='py'?'python':language==='cpp'?'cpp':'javascript'} value={src} onChange={(v)=>setSrc(v||'')} options={{fontSize:14,minimap:{enabled:false}}}/></div></div>);
+}
